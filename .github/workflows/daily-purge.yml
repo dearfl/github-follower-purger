@@ -13,10 +13,14 @@ jobs:
     steps:
       - name: Purge followers
         run: |
-          repo_owner=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" https://api.github.com/user | jq -r ".login")
-          for follower in $(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" https://api.github.com/users/$repo_owner/followers | jq -r ".[].login"); do
-            echo "purging $follower"
-            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TG_CHAT_ID }}" --data-urlencode "text=github-follower-purger: $follower"
-            curl -s -X PUT -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/user/blocks/$follower
-            curl -s -X DELETE -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/user/blocks/$follower
+          owner=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" https://api.github.com/user | jq -r ".login")
+          for user in $(curl -s -X GET -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/user/blocks | jq -r ".[].login"); do
+            echo "unblocking $user"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TG_CHAT_ID }}" --data-urlencode "text=unblocking $user"
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/user/blocks/$user
+          done
+          for user in $(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" https://api.github.com/users/$owner/users | jq -r ".[].login"); do
+            echo "blocking $user"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TG_CHAT_ID }}" --data-urlencode "text=blocking $user"
+            curl -s -X PUT -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/user/blocks/$user
           done
