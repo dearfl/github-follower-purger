@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Purge my github followers
         run: |
           owner=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.AUTH_TOKEN }}" https://api.github.com/user | jq -r ".login")
